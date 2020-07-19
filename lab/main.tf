@@ -99,8 +99,8 @@ resource "aws_launch_configuration" "ec2_template" {
             sudo apt update -y
             sudo apt install -y httpd
             echo "Website is Working !" > /var/www/html/index.html
-            systemctl start httpd
-            systemctl enable httpd
+            systemctl start apache2
+            systemctl enable apache2
             EOF
   security_groups = [aws_security_group.asg_sec_group.id]
   key_name        = aws_key_pair.lab_keypair.id
