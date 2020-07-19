@@ -92,7 +92,7 @@ resource "aws_security_group" "asg_sec_group" {
 }
 
 resource "aws_launch_configuration" "ec2_template" {
-  image_id        = "ami-0f132f5f9da420fd1"
+  image_id        = "ami-03b7e55086baf7a20"
   instance_type   = "t3.micro"
   user_data       = <<-EOF
             #!/bin/bash
