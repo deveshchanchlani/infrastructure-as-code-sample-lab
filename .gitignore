@@ -6,3 +6,4 @@ ssh/*
 .idea
 *.out
 plan.out
+creds/credentials
