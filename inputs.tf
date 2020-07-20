@@ -8,9 +8,7 @@ variable "key_name" {
   default     = "lab-key"
 }
 
-
-# variable "name" {
-# description = "A name to be applied to make everything unique and personal"
-#  default     = "lab"
-#}
+variable "name" {
+  description = "A name to be applied to make everything unique and personal"
+}
 
