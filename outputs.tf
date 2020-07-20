@@ -1,3 +1,3 @@
-output "elb-dns-name" {
-  value = module.dev.elb_dns_name
+output "bastion_ip" {
+  value = module.dev.bastion
 }

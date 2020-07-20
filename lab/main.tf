@@ -202,11 +202,30 @@ resource "aws_autoscaling_group" "workers" {
 
   target_group_arns = [aws_lb_target_group.asg.arn]
 
-  tag {
-    key                 = "name"
-    value               = "workers"
-    propagate_at_launch = false
-  }
+	tag {
+		key = "owner"
+		value = var.name
+    propagate_at_launch = true
+	}
+
+	tag {
+		key = "type"
+		value = "worker"
+    propagate_at_launch = true
+	}
+ 
+	tag {
+		key = "environment"
+		value = "dev"
+    propagate_at_launch = true
+	}
+ 
+	tag {
+		key = "name"
+		value = format("%s-devops-bootcamp-worker_node", var.name)
+    propagate_at_launch = true
+	}
+ 
 
   lifecycle {
     create_before_destroy = true
@@ -214,7 +233,6 @@ resource "aws_autoscaling_group" "workers" {
 }
 
 resource "aws_lb" "elb" {
-  name               = "workerselb"
   load_balancer_type = "application"
 
   subnets         = aws_subnet.worker.*.id
@@ -222,7 +240,6 @@ resource "aws_lb" "elb" {
 }
 
 resource "aws_lb_target_group" "asg" {
-  name     = "workertg"
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.lab.id
@@ -282,5 +299,4 @@ resource "aws_instance" "bastion" {
   key_name      = aws_key_pair.lab_keypair.id
   tags          = module.tags_bastion.tags
 }
-
 
