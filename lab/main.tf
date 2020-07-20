@@ -7,7 +7,7 @@ module "tags_network" {
 
 	tags = {
     owner       = var.name
-    type        = "bastion"
+    type        = "network"
 	}
 }
 
@@ -33,7 +33,7 @@ module "tags_worker" {
 
 	tags = {
     owner       = var.name
-    type        = "bastion"
+    type        = "worker"
 	}
 }
 
@@ -46,7 +46,7 @@ module "tags_controlplane" {
 
 	tags = {
     owner       = var.name
-    type        = "bastion"
+    type        = "controlplane"
 	}
 }
 
