@@ -15,7 +15,6 @@ variable "key_name" {
 
 variable "name" {
   description = "A name to be applied to make everything unique and personal"
-  default     = "lab"
 }
 
 variable "aws_region" {

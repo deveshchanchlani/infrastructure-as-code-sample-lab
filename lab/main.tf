@@ -5,10 +5,10 @@ module "tags_network" {
   name        = "devops-bootcamp"
   delimiter   = "_"
 
-	tags = {
-    owner       = var.name
-    type        = "network"
-	}
+  tags = {
+    owner = var.name
+    type  = "network"
+  }
 }
 
 module "tags_bastion" {
@@ -18,10 +18,10 @@ module "tags_bastion" {
   name        = "devops-bootcamp"
   delimiter   = "_"
 
-	tags = {
-    owner       = var.name
-    type        = "bastion"
-	}
+  tags = {
+    owner = var.name
+    type  = "bastion"
+  }
 }
 
 module "tags_worker" {
@@ -31,10 +31,10 @@ module "tags_worker" {
   name        = "devops-bootcamp"
   delimiter   = "_"
 
-	tags = {
-    owner       = var.name
-    type        = "worker"
-	}
+  tags = {
+    owner = var.name
+    type  = "worker"
+  }
 }
 
 module "tags_controlplane" {
@@ -44,10 +44,10 @@ module "tags_controlplane" {
   name        = "devops-bootcamp"
   delimiter   = "_"
 
-	tags = {
-    owner       = var.name
-    type        = "controlplane"
-	}
+  tags = {
+    owner = var.name
+    type  = "controlplane"
+  }
 }
 
 resource "aws_vpc" "lab" {
@@ -79,7 +79,7 @@ resource "aws_subnet" "bastion" {
 }
 
 resource "aws_subnet" "worker" {
-	count = 2
+  count                   = 2
   vpc_id                  = aws_vpc.lab.id
   cidr_block              = format("10.0.%s.0/24", count.index + 10)
   map_public_ip_on_launch = false
@@ -88,7 +88,7 @@ resource "aws_subnet" "worker" {
 }
 
 resource "aws_subnet" "controlplane" {
-	count = 2
+  count                   = 2
   vpc_id                  = aws_vpc.lab.id
   cidr_block              = format("10.0.%s.0/24", count.index + 20)
   map_public_ip_on_launch = false
@@ -202,30 +202,30 @@ resource "aws_autoscaling_group" "workers" {
 
   target_group_arns = [aws_lb_target_group.asg.arn]
 
-	tag {
-		key = "owner"
-		value = var.name
+  tag {
+    key                 = "owner"
+    value               = var.name
     propagate_at_launch = true
-	}
+  }
 
-	tag {
-		key = "type"
-		value = "worker"
+  tag {
+    key                 = "type"
+    value               = "worker"
     propagate_at_launch = true
-	}
- 
-	tag {
-		key = "environment"
-		value = "dev"
+  }
+
+  tag {
+    key                 = "environment"
+    value               = "dev"
     propagate_at_launch = true
-	}
- 
-	tag {
-		key = "name"
-		value = format("%s-devops-bootcamp-worker_node", var.name)
+  }
+
+  tag {
+    key                 = "name"
+    value               = format("%s-devops-bootcamp-worker_node", var.name)
     propagate_at_launch = true
-	}
- 
+  }
+
 
   lifecycle {
     create_before_destroy = true
@@ -234,16 +234,16 @@ resource "aws_autoscaling_group" "workers" {
 
 resource "aws_lb" "elb" {
   load_balancer_type = "application"
-  subnets         = aws_subnet.worker.*.id
-  security_groups = [aws_security_group.worker.id]
-  tags          = module.tags_worker.tags
+  subnets            = aws_subnet.worker.*.id
+  security_groups    = [aws_security_group.worker.id]
+  tags               = module.tags_worker.tags
 }
 
 resource "aws_lb_target_group" "asg" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.lab.id
-  tags          = module.tags_worker.tags
+  tags     = module.tags_worker.tags
 }
 
 resource "aws_autoscaling_attachment" "asg" {
@@ -283,21 +283,21 @@ resource "aws_lb_listener_rule" "asg" {
 }
 
 resource "aws_instance" "controlplane" {
-	count = 2
-  ami           = "ami-02c7c728a7874ae7a"
-  instance_type = "t3.micro"
-  subnet_id     = aws_subnet.controlplane[count.index].id
-	security_groups = [aws_security_group.controlplane.id]
-  key_name      = aws_key_pair.lab_keypair.id
-  tags          = module.tags_controlplane.tags
+  count           = 2
+  ami             = "ami-02c7c728a7874ae7a"
+  instance_type   = "t3.micro"
+  subnet_id       = aws_subnet.controlplane[count.index].id
+  security_groups = [aws_security_group.controlplane.id]
+  key_name        = aws_key_pair.lab_keypair.id
+  tags            = module.tags_controlplane.tags
 }
 
 resource "aws_instance" "bastion" {
-  ami           = "ami-02c7c728a7874ae7a"
-  instance_type = "t3.micro"
-  subnet_id     = aws_subnet.bastion.id
-	security_groups = [aws_security_group.bastion.id]
-  key_name      = aws_key_pair.lab_keypair.id
-  tags          = module.tags_bastion.tags
+  ami             = "ami-02c7c728a7874ae7a"
+  instance_type   = "t3.micro"
+  subnet_id       = aws_subnet.bastion.id
+  security_groups = [aws_security_group.bastion.id]
+  key_name        = aws_key_pair.lab_keypair.id
+  tags            = module.tags_bastion.tags
 }
 
