@@ -234,15 +234,16 @@ resource "aws_autoscaling_group" "workers" {
 
 resource "aws_lb" "elb" {
   load_balancer_type = "application"
-
   subnets         = aws_subnet.worker.*.id
   security_groups = [aws_security_group.worker.id]
+  tags          = module.tags_worker.tags
 }
 
 resource "aws_lb_target_group" "asg" {
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.lab.id
+  tags          = module.tags_worker.tags
 }
 
 resource "aws_autoscaling_attachment" "asg" {
