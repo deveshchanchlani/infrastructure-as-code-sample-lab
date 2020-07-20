@@ -3,8 +3,12 @@ module "tags_network" {
   namespace   = var.name
   environment = "dev"
   name        = "devops-bootcamp"
-  attributes  = ["network"]
   delimiter   = "_"
+
+	tags = {
+    owner       = var.name
+    type        = "bastion"
+	}
 }
 
 module "tags_bastion" {
@@ -12,8 +16,12 @@ module "tags_bastion" {
   namespace   = var.name
   environment = "dev"
   name        = "devops-bootcamp"
-  attributes  = ["bastion"]
   delimiter   = "_"
+
+	tags = {
+    owner       = var.name
+    type        = "bastion"
+	}
 }
 
 module "tags_worker" {
@@ -21,8 +29,12 @@ module "tags_worker" {
   namespace   = var.name
   environment = "dev"
   name        = "devops-bootcamp"
-  attributes  = ["worker"]
   delimiter   = "_"
+
+	tags = {
+    owner       = var.name
+    type        = "bastion"
+	}
 }
 
 module "tags_controlplane" {
@@ -30,9 +42,14 @@ module "tags_controlplane" {
   namespace   = var.name
   environment = "dev"
   name        = "devops-bootcamp"
-  attributes  = ["controlplane"]
   delimiter   = "_"
+
+	tags = {
+    owner       = var.name
+    type        = "bastion"
+	}
 }
+
 resource "aws_vpc" "lab" {
   cidr_block = "10.0.0.0/16"
   tags       = module.tags_network.tags
@@ -58,43 +75,30 @@ resource "aws_subnet" "bastion" {
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[0]
-  tags                    = module.tags_network.tags
+  tags                    = module.tags_bastion.tags
 }
 
-resource "aws_subnet" "worker_1" {
+resource "aws_subnet" "worker" {
+	count = 2
   vpc_id                  = aws_vpc.lab.id
-  cidr_block              = "10.0.2.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[0]
-  tags                    = module.tags_network.tags
+  cidr_block              = format("10.0.%s.0/24", count.index + 10)
+  map_public_ip_on_launch = false
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  tags                    = module.tags_worker.tags
 }
 
-resource "aws_subnet" "worker_2" {
+resource "aws_subnet" "controlplane" {
+	count = 2
   vpc_id                  = aws_vpc.lab.id
-  cidr_block              = "10.0.3.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[1]
-  tags                    = module.tags_network.tags
-}
-
-resource "aws_subnet" "controlplane_1" {
-  vpc_id                  = aws_vpc.lab.id
-  cidr_block              = "10.0.4.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[0]
-  tags                    = module.tags_network.tags
-}
-
-resource "aws_subnet" "controlplane_2" {
-  vpc_id                  = aws_vpc.lab.id
-  cidr_block              = "10.0.5.0/24"
-  map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[1]
-  tags                    = module.tags_network.tags
+  cidr_block              = format("10.0.%s.0/24", count.index + 20)
+  map_public_ip_on_launch = false
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
+  tags                    = module.tags_controlplane.tags
 }
 
 resource "aws_security_group" "bastion" {
   vpc_id = aws_vpc.lab.id
+  tags   = module.tags_bastion.tags
 
   egress {
     from_port   = 0
@@ -113,6 +117,7 @@ resource "aws_security_group" "bastion" {
 
 resource "aws_security_group" "controlplane" {
   vpc_id = aws_vpc.lab.id
+  tags   = module.tags_controlplane.tags
 
   egress {
     from_port   = 0
@@ -138,6 +143,7 @@ resource "aws_security_group" "controlplane" {
 
 resource "aws_security_group" "worker" {
   vpc_id = aws_vpc.lab.id
+  tags   = module.tags_worker.tags
 
   egress {
     from_port   = 0
@@ -192,7 +198,7 @@ resource "aws_autoscaling_group" "workers" {
 
   health_check_type = "EC2"
 
-  vpc_zone_identifier = [aws_subnet.worker_1.id, aws_subnet.worker_2.id]
+  vpc_zone_identifier = aws_subnet.worker.*.id
 
   target_group_arns = [aws_lb_target_group.asg.arn]
 
@@ -211,7 +217,7 @@ resource "aws_lb" "elb" {
   name               = "workerselb"
   load_balancer_type = "application"
 
-  subnets         = [aws_subnet.worker_1.id, aws_subnet.worker_2.id]
+  subnets         = aws_subnet.worker.*.id
   security_groups = [aws_security_group.worker.id]
 }
 
@@ -258,19 +264,11 @@ resource "aws_lb_listener_rule" "asg" {
   }
 }
 
-resource "aws_instance" "controlplane_1" {
+resource "aws_instance" "controlplane" {
+	count = 2
   ami           = "ami-02c7c728a7874ae7a"
   instance_type = "t3.micro"
-  subnet_id     = aws_subnet.controlplane_1.id
-	security_groups = [aws_security_group.controlplane.id]
-  key_name      = aws_key_pair.lab_keypair.id
-  tags          = module.tags_controlplane.tags
-}
-
-resource "aws_instance" "controlplane_2" {
-  ami           = "ami-02c7c728a7874ae7a"
-  instance_type = "t3.micro"
-  subnet_id     = aws_subnet.controlplane_2.id
+  subnet_id     = aws_subnet.controlplane[count.index].id
 	security_groups = [aws_security_group.controlplane.id]
   key_name      = aws_key_pair.lab_keypair.id
   tags          = module.tags_controlplane.tags
