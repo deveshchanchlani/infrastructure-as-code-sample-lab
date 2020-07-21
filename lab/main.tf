@@ -55,6 +55,15 @@ resource "aws_vpc" "lab" {
   tags       = module.tags_network.tags
 }
 
+resource "aws_route53_zone" "bryan_dobc" {
+  name = "bryan.dobc"
+  tags = module.tags_network.tags
+
+  vpc {
+    vpc_id = aws_vpc.lab.id
+  }
+}
+
 resource "aws_internet_gateway" "lab_gateway" {
   vpc_id = aws_vpc.lab.id
   tags   = module.tags_network.tags
@@ -62,8 +71,8 @@ resource "aws_internet_gateway" "lab_gateway" {
 
 resource "aws_route" "lab_internet_access" {
   route_table_id         = aws_vpc.lab.main_route_table_id
-  destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.lab_gateway.id
+  destination_cidr_block = "0.0.0.0/0"
 }
 
 data "aws_availability_zones" "available" {
@@ -195,12 +204,10 @@ resource "aws_autoscaling_group" "workers" {
   min_size                  = 2
   launch_configuration      = aws_launch_configuration.worker.name
   health_check_grace_period = 300
-
-  health_check_type = "EC2"
-
-  vpc_zone_identifier = aws_subnet.worker.*.id
-
-  target_group_arns = [aws_lb_target_group.asg.arn]
+  health_check_type         = "EC2"
+  vpc_zone_identifier       = aws_subnet.worker.*.id
+  target_group_arns         = [aws_lb_target_group.asg.arn]
+  depends_on                = [aws_route53_record.controlplane]
 
   tag {
     key                 = "owner"
@@ -283,21 +290,30 @@ resource "aws_lb_listener_rule" "asg" {
 }
 
 resource "aws_instance" "controlplane" {
-  count           = 2
-  ami             = "ami-02c7c728a7874ae7a"
-  instance_type   = "t3.micro"
-  subnet_id       = aws_subnet.controlplane[count.index].id
-  security_groups = [aws_security_group.controlplane.id]
-  key_name        = aws_key_pair.lab_keypair.id
-  tags            = module.tags_controlplane.tags
+  count                  = 1
+  ami                    = "ami-02c7c728a7874ae7a"
+  instance_type          = "t3.micro"
+  subnet_id              = aws_subnet.controlplane[count.index].id
+  vpc_security_group_ids = [aws_security_group.controlplane.id]
+  key_name               = aws_key_pair.lab_keypair.id
+  tags                   = module.tags_controlplane.tags
+}
+
+resource "aws_route53_record" "controlplane" {
+  zone_id    = aws_route53_zone.bryan_dobc.id
+  name       = "controlplane"
+  type       = "A"
+  ttl        = 300
+  records    = [aws_instance.controlplane.0.private_ip]
+  depends_on = [aws_instance.controlplane]
 }
 
 resource "aws_instance" "bastion" {
-  ami             = "ami-02c7c728a7874ae7a"
-  instance_type   = "t3.micro"
-  subnet_id       = aws_subnet.bastion.id
-  security_groups = [aws_security_group.bastion.id]
-  key_name        = aws_key_pair.lab_keypair.id
-  tags            = module.tags_bastion.tags
+  ami                    = "ami-02c7c728a7874ae7a"
+  instance_type          = "t3.micro"
+  subnet_id              = aws_subnet.bastion.id
+  vpc_security_group_ids = [aws_security_group.bastion.id]
+  key_name               = aws_key_pair.lab_keypair.id
+  tags                   = module.tags_bastion.tags
 }
 
