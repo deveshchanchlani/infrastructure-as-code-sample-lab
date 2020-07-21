@@ -25,6 +25,7 @@ down:
 	time terraform destroy -auto-approve 
 
 test:
+	ssh -i ssh/id_rsa ubuntu@$$(terraform output -json | jq '.bastion_ip.value' | xargs) rm -f /home/ubuntu/id_rsa
 	scp -i ssh/id_rsa ssh/id_rsa ubuntu@$$(terraform output -json | jq '.bastion_ip.value' | xargs):~
 	ssh -i ssh/id_rsa ubuntu@$$(terraform output -json | jq '.bastion_ip.value' | xargs) chmod 400 /home/ubuntu/id_rsa
 	ssh -i ssh/id_rsa ubuntu@$$(terraform output -json | jq '.bastion_ip.value' | xargs)

@@ -15,7 +15,7 @@ module "tags_bastion" {
   source      = "git::https://github.com/cloudposse/terraform-null-label.git"
   namespace   = var.name
   environment = "dev"
-  name        = "devops-bootcamp"
+  name        = "basion-devops-bootcamp"
   delimiter   = "_"
 
   tags = {
@@ -28,12 +28,13 @@ module "tags_worker" {
   source      = "git::https://github.com/cloudposse/terraform-null-label.git"
   namespace   = var.name
   environment = "dev"
-  name        = "devops-bootcamp"
+  name        = "worker-devops-bootcamp"
   delimiter   = "_"
 
   tags = {
     owner = var.name
     type  = "worker"
+    Name  = format("worker-%s", var.name)
   }
 }
 
@@ -41,7 +42,7 @@ module "tags_controlplane" {
   source      = "git::https://github.com/cloudposse/terraform-null-label.git"
   namespace   = var.name
   environment = "dev"
-  name        = "devops-bootcamp"
+  name        = "controlplane-devops-bootcamp"
   delimiter   = "_"
 
   tags = {
@@ -51,8 +52,9 @@ module "tags_controlplane" {
 }
 
 resource "aws_vpc" "lab" {
-  cidr_block = "10.0.0.0/16"
-  tags       = module.tags_network.tags
+  cidr_block           = "10.0.0.0/16"
+  tags                 = module.tags_network.tags
+  enable_dns_hostnames = true
 }
 
 resource "aws_route53_zone" "bryan_dobc" {
