@@ -105,10 +105,10 @@ resource "aws_launch_configuration" "ec2_template" {
   user_data       = <<-EOF
             #!/bin/bash
             sudo apt update -y
-            sudo apt install -y httpd
+            sudo apt install -y apache2
             echo "Website is Working !" > /var/www/html/index.html
-            systemctl start apache2
             systemctl enable apache2
+            systemctl start apache2
             EOF
   security_groups = [aws_security_group.asg_sec_group.id]
   key_name        = aws_key_pair.lab_keypair.id
