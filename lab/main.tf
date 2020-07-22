@@ -99,7 +99,7 @@ resource "aws_subnet" "worker" {
 }
 
 resource "aws_subnet" "controlplane" {
-  count                   = 2
+  count                   = 1
   vpc_id                  = aws_vpc.lab.id
   cidr_block              = format("10.0.%s.0/24", count.index + 20)
   map_public_ip_on_launch = false
@@ -113,8 +113,8 @@ resource "aws_security_group" "bastion" {
 
   egress {
     from_port   = 0
-    protocol    = "-1"
     to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -132,16 +132,23 @@ resource "aws_security_group" "controlplane" {
 
   egress {
     from_port   = 0
-    protocol    = "-1"
     to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 6443
+    to_port     = 6443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = [aws_security_group.worker.id]
+  }
+
+  ingress {
+    from_port   = 8763
+    to_port     = 8763
+    protocol    = "tcp"
+    security_groups = [aws_security_group.worker.id]
   }
 
   ingress {
@@ -158,8 +165,8 @@ resource "aws_security_group" "worker" {
 
   egress {
     from_port   = 0
-    protocol    = "-1"
     to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -168,13 +175,6 @@ resource "aws_security_group" "worker" {
     to_port         = 22
     protocol        = "tcp"
     security_groups = [aws_security_group.bastion.id]
-  }
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
@@ -307,7 +307,14 @@ resource "aws_route53_record" "controlplane" {
   type       = "A"
   ttl        = 300
   records    = [aws_instance.controlplane.0.private_ip]
-  depends_on = [aws_instance.controlplane]
+}
+
+resource "aws_route53_record" "controlplane" {
+  zone_id    = aws_route53_zone.bryan_dobc.id
+  name       = "wibble"
+  type       = "CNAME"
+  ttl        = 300
+  records    = ["controlplane"]
 }
 
 resource "aws_instance" "bastion" {
