@@ -51,6 +51,26 @@ module "tags_controlplane" {
   }
 }
 
+data "aws_ami" "latest_server" {
+  most_recent = true
+  owners      = ["772816346052"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["bryan-k3s-server*"]
+  }
+}
+
+data "aws_ami" "latest_agent" {
+  most_recent = true
+  owners      = ["772816346052"] # Canonical
+
+  filter {
+    name   = "name"
+    values = ["bryan-k3s-agent*"]
+  }
+}
+
 resource "aws_vpc" "lab" {
   cidr_block           = "10.0.0.0/16"
   tags                 = module.tags_network.tags
@@ -138,16 +158,16 @@ resource "aws_security_group" "controlplane" {
   }
 
   ingress {
-    from_port   = 6443
-    to_port     = 6443
-    protocol    = "tcp"
+    from_port       = 6443
+    to_port         = 6443
+    protocol        = "tcp"
     security_groups = [aws_security_group.worker.id]
   }
 
   ingress {
-    from_port   = 8763
-    to_port     = 8763
-    protocol    = "tcp"
+    from_port       = 8763
+    to_port         = 8763
+    protocol        = "tcp"
     security_groups = [aws_security_group.worker.id]
   }
 
@@ -162,27 +182,33 @@ resource "aws_security_group" "controlplane" {
 resource "aws_security_group" "worker" {
   vpc_id = aws_vpc.lab.id
   tags   = module.tags_worker.tags
+}
 
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_security_group_rule" "egress_to_all" {
+  type              = "egress"
+  security_group_id = aws_security_group.worker.id
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+}
 
-  ingress {
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [aws_security_group.bastion.id]
-  }
+resource "aws_security_group_rule" "ssh_from_bastion" {
+  type                     = "ingress"
+  security_group_id        = aws_security_group.worker.id
+  source_security_group_id = aws_security_group.bastion.id
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
+}
 
-  ingress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    security_groups = [aws_security_group.controlplane.id]
-  }
+resource "aws_security_group_rule" "all_from_control_plane" {
+  type                     = "ingress"
+  security_group_id        = aws_security_group.worker.id
+  source_security_group_id = aws_security_group.controlplane.id
+  from_port                = 0
+  to_port                  = 0
+  protocol                 = "-1"
 }
 
 resource "aws_key_pair" "lab_keypair" {
@@ -191,7 +217,8 @@ resource "aws_key_pair" "lab_keypair" {
 }
 
 resource "aws_launch_configuration" "worker" {
-  image_id        = "ami-02c7c728a7874ae7a"
+  name            = format("%s-lc", var.name)
+  image_id        = data.aws_ami.latest_agent.id
   instance_type   = "t3.micro"
   security_groups = [aws_security_group.worker.id]
   key_name        = aws_key_pair.lab_keypair.id
@@ -202,6 +229,7 @@ resource "aws_launch_configuration" "worker" {
 }
 
 resource "aws_autoscaling_group" "workers" {
+  name                      = format("%s-asg", var.name)
   max_size                  = 3
   min_size                  = 2
   launch_configuration      = aws_launch_configuration.worker.name
@@ -249,6 +277,7 @@ resource "aws_lb" "elb" {
 }
 
 resource "aws_lb_target_group" "asg" {
+  name     = format("%s-tg", var.name)
   port     = 80
   protocol = "HTTP"
   vpc_id   = aws_vpc.lab.id
@@ -293,7 +322,7 @@ resource "aws_lb_listener_rule" "asg" {
 
 resource "aws_instance" "controlplane" {
   count                  = 1
-  ami                    = "ami-02c7c728a7874ae7a"
+  ami                    = data.aws_ami.latest_server.id
   instance_type          = "t3.micro"
   subnet_id              = aws_subnet.controlplane[count.index].id
   vpc_security_group_ids = [aws_security_group.controlplane.id]
@@ -302,19 +331,11 @@ resource "aws_instance" "controlplane" {
 }
 
 resource "aws_route53_record" "controlplane" {
-  zone_id    = aws_route53_zone.bryan_dobc.id
-  name       = "controlplane"
-  type       = "A"
-  ttl        = 300
-  records    = [aws_instance.controlplane.0.private_ip]
-}
-
-resource "aws_route53_record" "controlplane" {
-  zone_id    = aws_route53_zone.bryan_dobc.id
-  name       = "wibble"
-  type       = "CNAME"
-  ttl        = 300
-  records    = ["controlplane"]
+  zone_id = aws_route53_zone.bryan_dobc.id
+  name    = "controlplane"
+  type    = "A"
+  ttl     = 300
+  records = [aws_instance.controlplane.0.private_ip]
 }
 
 resource "aws_instance" "bastion" {
