@@ -53,7 +53,7 @@ module "tags_controlplane" {
 
 data "aws_ami" "latest_server" {
   most_recent = true
-  owners      = ["772816346052"] # Canonical
+  owners      = ["772816346052"]
 
   filter {
     name   = "name"
@@ -63,7 +63,7 @@ data "aws_ami" "latest_server" {
 
 data "aws_ami" "latest_agent" {
   most_recent = true
-  owners      = ["772816346052"] # Canonical
+  owners      = ["772816346052"]
 
   filter {
     name   = "name"
@@ -320,6 +320,14 @@ resource "aws_lb_listener_rule" "asg" {
   }
 }
 
+resource "aws_route53_record" "controlplane" {
+  zone_id = aws_route53_zone.bryan_dobc.id
+  name    = "controlplane"
+  type    = "A"
+  ttl     = 300
+  records = [aws_instance.controlplane.0.private_ip]
+}
+
 resource "aws_instance" "controlplane" {
   count                  = 1
   ami                    = data.aws_ami.latest_server.id
@@ -328,14 +336,6 @@ resource "aws_instance" "controlplane" {
   vpc_security_group_ids = [aws_security_group.controlplane.id]
   key_name               = aws_key_pair.lab_keypair.id
   tags                   = module.tags_controlplane.tags
-}
-
-resource "aws_route53_record" "controlplane" {
-  zone_id = aws_route53_zone.bryan_dobc.id
-  name    = "controlplane"
-  type    = "A"
-  ttl     = 300
-  records = [aws_instance.controlplane.0.private_ip]
 }
 
 resource "aws_instance" "bastion" {
