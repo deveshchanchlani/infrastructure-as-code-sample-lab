@@ -22,10 +22,6 @@ variable "aws_region" {
   default     = "me-south-1"
 }
 
-# Ubuntu Server 18.04 LTS 
-variable "aws_amis" {
-  description = "What to put on the servers!"
-  default = {
-    me-south-1 = "ami-051274f257aba97f9"
-  }
+variable "instance_type" {
+  default = "t3.micro"
 }

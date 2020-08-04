@@ -12,3 +12,6 @@ variable "name" {
   description = "A name to be applied to make everything unique and personal"
 }
 
+variable "instance_type" {
+  default = "t3.micro"
+}

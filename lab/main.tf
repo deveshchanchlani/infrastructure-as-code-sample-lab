@@ -1,3 +1,4 @@
+provider "random" {}
 module "tags_network" {
   source      = "git::https://github.com/cloudposse/terraform-null-label.git"
   namespace   = var.name
@@ -211,17 +212,35 @@ resource "aws_security_group_rule" "all_from_control_plane" {
   protocol                 = "-1"
 }
 
-resource "aws_key_pair" "lab_keypair" {
-  key_name   = format("%s%s", var.name, "_keypair")
-  public_key = file(var.public_key_path)
+resource "random_id" "keypair" {
+  keepers = {
+    public_key = file(var.public_key_path)
+  }
+
+  byte_length = 8
 }
 
+resource "aws_key_pair" "lab_keypair" {
+  key_name   = format("%s_keypair_%s", var.name, random_id.keypair.hex)
+  public_key = random_id.keypair.keepers.public_key
+}
+
+resource "random_id" "worker_lc_name" {
+  keepers = {
+    image_id = data.aws_ami.latest_agent.id
+  }
+
+  byte_length = 8
+}
+
+
 resource "aws_launch_configuration" "worker" {
-  name            = format("%s-lc", var.name)
-  image_id        = data.aws_ami.latest_agent.id
-  instance_type   = "t3.micro"
-  security_groups = [aws_security_group.worker.id]
-  key_name        = aws_key_pair.lab_keypair.id
+  name                        = format("%s-lc-%s", var.name, random_id.worker_lc_name.hex)
+  image_id                    = random_id.worker_lc_name.keepers.image_id
+  instance_type               = var.instance_type
+  security_groups             = [aws_security_group.worker.id]
+  key_name                    = aws_key_pair.lab_keypair.id
+  associate_public_ip_address = true
 
   lifecycle {
     create_before_destroy = true
@@ -329,13 +348,14 @@ resource "aws_route53_record" "controlplane" {
 }
 
 resource "aws_instance" "controlplane" {
-  count                  = 1
-  ami                    = data.aws_ami.latest_server.id
-  instance_type          = "t3.micro"
-  subnet_id              = aws_subnet.controlplane[count.index].id
-  vpc_security_group_ids = [aws_security_group.controlplane.id]
-  key_name               = aws_key_pair.lab_keypair.id
-  tags                   = module.tags_controlplane.tags
+  count                       = 1
+  ami                         = data.aws_ami.latest_server.id
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.controlplane[count.index].id
+  vpc_security_group_ids      = [aws_security_group.controlplane.id]
+  key_name                    = aws_key_pair.lab_keypair.id
+  associate_public_ip_address = true
+  tags                        = module.tags_controlplane.tags
 }
 
 resource "aws_instance" "bastion" {
