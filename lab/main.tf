@@ -58,7 +58,7 @@ data "aws_ami" "latest_server" {
 
   filter {
     name   = "name"
-    values = ["bryan-k3s-server*"]
+    values = [format("%s-k3s-server*", var.name)]
   }
 }
 
@@ -68,7 +68,7 @@ data "aws_ami" "latest_agent" {
 
   filter {
     name   = "name"
-    values = ["bryan-k3s-agent*"]
+    values = [format("%s-k3s-agent*", var.name)]
   }
 }
 
@@ -111,7 +111,7 @@ resource "aws_subnet" "bastion" {
 }
 
 resource "aws_subnet" "worker" {
-  count                   = 2
+  count                   = 3
   vpc_id                  = aws_vpc.lab.id
   cidr_block              = format("10.0.%s.0/24", count.index + 10)
   map_public_ip_on_launch = false
@@ -233,7 +233,6 @@ resource "random_id" "worker_lc_name" {
   byte_length = 8
 }
 
-
 resource "aws_launch_configuration" "worker" {
   name                        = format("%s-lc-%s", var.name, random_id.worker_lc_name.hex)
   image_id                    = random_id.worker_lc_name.keepers.image_id
@@ -249,8 +248,8 @@ resource "aws_launch_configuration" "worker" {
 
 resource "aws_autoscaling_group" "workers" {
   name                      = format("%s-asg", var.name)
-  max_size                  = 3
-  min_size                  = 2
+  max_size                  = 4
+  min_size                  = 3
   launch_configuration      = aws_launch_configuration.worker.name
   health_check_grace_period = 300
   health_check_type         = "EC2"
@@ -366,4 +365,3 @@ resource "aws_instance" "bastion" {
   key_name               = aws_key_pair.lab_keypair.id
   tags                   = module.tags_bastion.tags
 }
-
