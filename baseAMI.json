@@ -1,0 +1,26 @@
+{
+    "variables": {
+        "aws_source_ami": "ami-003634241a8fcdec0",
+        "vpc_region": "us-west-2",
+        "instance_type": "t2.micro",
+        "ssh_username": "ubuntu"
+    },
+    "builders": [{
+        "type": "amazon-ebs",
+        "region": "{{user `vpc_region`}}",
+        "source_ami": "{{user `aws_source_ami`}}",
+        "instance_type": "{{user `instance_type`}}",
+        "ssh_username": "{{user `ssh_username`}}",
+        "ssh_pty": "true",
+        "ami_name": "packer-demo-{{timestamp}}",
+        "tags": {
+            "Created-by": "Packer",
+            "OS_Version": "Ubuntu",
+            "Release": "18.04"
+        }
+    }],
+    "provisioners": [{
+        "type": "shell",
+        "script": "baseInit.sh"
+    }]
+}
