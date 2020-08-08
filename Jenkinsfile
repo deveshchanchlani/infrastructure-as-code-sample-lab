@@ -19,7 +19,7 @@ pipeline {
       agent {
         docker {
           image 'hashicorp/packer:light'
-          args '--mount type=bind,source=./packer/baseAMI.json,target=/mnt/baseAMI.json'
+          args '--mount type=bind,source=${workspace}/infrastructure-as-code-sample-lab/packer/baseAMI.json,target=/mnt/baseAMI.json'
         }
       }
       steps {
