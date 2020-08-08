@@ -10,11 +10,6 @@ pipeline {
       }
     }
 
-    // stage('Initialize') {
-    //     dockerHome = tool 'myDocker'
-    //     env.PATH = "${dockerHome}/bin:${env.PATH}"
-    // }
-
     stage('create AMI') {
       agent {
         docker {
@@ -23,7 +18,7 @@ pipeline {
         }
       }
       steps {
-        packer build /mnt/baseAMI.json
+        sh 'packer build /mnt/baseAMI.json'
       }
     }
   }
