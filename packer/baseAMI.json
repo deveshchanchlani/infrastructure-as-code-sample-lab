@@ -21,6 +21,6 @@
     }],
     "provisioners": [{
         "type": "shell",
-        "script": "echo 'hello'"
+        "script": "/mnt/packer/baseInit.sh"
     }]
 }
