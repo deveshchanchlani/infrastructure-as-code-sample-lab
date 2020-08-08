@@ -21,6 +21,6 @@
     }],
     "provisioners": [{
         "type": "shell",
-        "script": "baseInit.sh"
+        "script": "echo 'hello'"
     }]
 }
