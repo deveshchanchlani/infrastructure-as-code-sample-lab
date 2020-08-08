@@ -1,9 +1,6 @@
 pipeline {
-  agent {
-    docker {
-      image 'hashicorp/packer:light'
-    }
-  }
+  agent none
+
   stages {
     stage ('Checkout') {
       steps {
@@ -13,15 +10,20 @@ pipeline {
       }
     }
 
-    stage('Initialize') {
-        dockerHome = tool 'myDocker'
-        env.PATH = "${dockerHome}/bin:${env.PATH}"
-    }
+    // stage('Initialize') {
+    //     dockerHome = tool 'myDocker'
+    //     env.PATH = "${dockerHome}/bin:${env.PATH}"
+    // }
 
     stage('create AMI') {
+      agent {
+        docker {
+          image 'hashicorp/packer:light'
+          args '--mount type=bind,source=./packer/baseAMI.json,target=/mnt/baseAMI.json'
+        }
+      }
       steps {
-        sh '''docker run -it --mount type=bind,source=./packer/baseAMI.json,target=/mnt/baseAMI.json
-    hashicorp/packer:latest build /mnt/baseAMI.json'''
+        sh '''packer build /mnt/baseAMI.json'''
       }
     }
   }
