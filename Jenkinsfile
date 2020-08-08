@@ -18,6 +18,7 @@ pipeline {
         }
       }
       steps {
+        sh 'ls /mnt/packer'
         sh 'packer build /mnt/packer/baseAMI.json'
       }
     }
