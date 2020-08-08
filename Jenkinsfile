@@ -23,7 +23,7 @@ pipeline {
         }
       }
       steps {
-        sh '''packer build /mnt/baseAMI.json'''
+        packer build /mnt/baseAMI.json
       }
     }
   }
