@@ -6,9 +6,11 @@ pipeline {
   }
   stages {
     stage ('Checkout') {
-      git branch: 'master',
-      credentialsId: 'github',
-      url: 'https://github.com/deveshchanchlani/infrastructure-as-code-sample-lab.git'
+      steps {
+        git branch: 'master',
+        credentialsId: 'github',
+        url: 'https://github.com/deveshchanchlani/infrastructure-as-code-sample-lab.git'
+      }
     }
 
     stage('Initialize') {
