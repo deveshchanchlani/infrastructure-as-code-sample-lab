@@ -3,10 +3,15 @@ pipeline {
     docker {
       image 'hashicorp/packer:light'
     }
-
   }
   stages {
-    stage('Initialize'){
+    stage ('Checkout') {
+      git branch: 'master',
+      credentialsId: 'github',
+      url: 'https://github.com/deveshchanchlani/infrastructure-as-code-sample-lab.git'
+    }
+
+    stage('Initialize') {
         def dockerHome = tool 'myDocker'
         env.PATH = "${dockerHome}/bin:${env.PATH}"
     }
@@ -17,6 +22,5 @@ pipeline {
     hashicorp/packer:latest build /mnt/baseAMI.json'''
       }
     }
-
   }
 }
