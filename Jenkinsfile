@@ -18,8 +18,11 @@ pipeline {
         }
       }
       steps {
-        sh 'ls /mnt/packer'
-        sh 'packer build /mnt/packer/baseAMI.json'
+        withCredentials([
+            usernamePassword(credentialsId: '15fab667-1a8d-48c1-8f18-08761a6ef87d', passwordVariable: 'AWS_SECRET', usernameVariable: 'AWS_KEY')
+          ]) {
+          sh 'packer build -var aws_access_key=${AWS_KEY} -var aws_secret_key=${AWS_SECRET} /mnt/packer/baseAMI.json'
+        }
       }
     }
   }
