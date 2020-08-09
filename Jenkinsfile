@@ -33,6 +33,7 @@ pipeline {
       agent {
         docker {
           image 'hashicorp/terraform:light'
+          args "--entrypoint=\'\'"
         }
       }
       steps {
