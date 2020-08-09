@@ -58,6 +58,8 @@ pipeline {
           ]) {
             sh "export TF_VAR_aws_access_key=${AWS_KEY}"
             sh "export TF_VAR_aws_secret_key=${AWS_SECRET}"
+            sh "echo $TF_VAR_aws_access_key"
+            sh "echo $TF_VAR_aws_secret_key"
             sh 'cd terraform'
             sh 'terraform init'
             sh 'terraform apply'
