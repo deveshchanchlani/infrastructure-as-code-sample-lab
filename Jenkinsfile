@@ -14,7 +14,7 @@ pipeline {
       agent {
         docker {
           image 'hashicorp/packer:light'
-          args '--mount type=bind,source=${workspace}/packer,target=/mnt/packer'
+          args '--mount type=bind,source=${workspace}/packer,target=/mnt/packer --entrypoint=\'\''
         }
       }
       steps {
