@@ -29,20 +29,7 @@ pipeline {
     //   }
     // }
 
-    // stage('Terraform Init') {
-    //   agent {
-    //     docker {
-    //       image 'hashicorp/terraform:light'
-    //       args "--entrypoint=\'\'"
-    //     }
-    //   }
-    //   steps {
-    //     sh 'cd terraform'
-    //     sh 'terraform init'
-    //   }
-    // }
-
-    stage('Terraform Apply') {
+    stage('Provision Instance') {
       agent {
         docker {
           image 'hashicorp/terraform:light'
@@ -58,7 +45,7 @@ pipeline {
           ]) {
             sh 'cd terraform'
             sh 'terraform init'
-            sh "terraform apply -auto-approve -var aws_access_key=${AWS_KEY} -var aws_secret_key=${AWS_SECRET}"
+            sh "terraform apply -auto-approve -var access_key=${AWS_KEY} -var secret_key=${AWS_SECRET}"
           }
       }
     }
