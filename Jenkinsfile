@@ -53,9 +53,11 @@ pipeline {
         withCredentials([
             usernamePassword(
               credentialsId: '15fab667-1a8d-48c1-8f18-08761a6ef87d',
-              passwordVariable: 'TF_VAR_aws_secret_key',
-              usernameVariable: 'TF_VAR_aws_access_key')
+              passwordVariable: 'AWS_SECRET',
+              usernameVariable: 'AWS_KEY')
           ]) {
+            sh "export TF_VAR_aws_access_key=${AWS_KEY}"
+            sh "export TF_VAR_aws_secret_key=${AWS_SECRET}"
             sh 'cd terraform'
             sh 'terraform init'
             sh 'terraform apply'
