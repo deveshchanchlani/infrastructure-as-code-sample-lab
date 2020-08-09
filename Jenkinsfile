@@ -10,19 +10,42 @@ pipeline {
       }
     }
 
-    stage('create AMI') {
+    // stage('Create AMI') {
+    //   agent {
+    //     docker {
+    //       image 'hashicorp/packer:light'
+    //       args "--mount type=bind,source=${workspace}/packer,target=/mnt/packer --entrypoint=\'\'"
+    //     }
+    //   }
+    //   steps {
+    //     withCredentials([
+    //         usernamePassword(
+    //           credentialsId: '15fab667-1a8d-48c1-8f18-08761a6ef87d',
+    //           passwordVariable: 'AWS_SECRET',
+    //           usernameVariable: 'AWS_KEY')
+    //       ]) {
+    //         sh "packer build -var aws_access_key=${AWS_KEY} -var aws_secret_key=${AWS_SECRET} /mnt/packer/baseAMI.json"
+    //       }
+    //   }
+    // }
+
+    stage('Provision Instance') {
       agent {
         docker {
-          image 'hashicorp/packer:light'
-          args '--mount type=bind,source=${workspace}/packer,target=/mnt/packer --entrypoint=\'\''
+          image 'hashicorp/terraform:light'
         }
       }
       steps {
         withCredentials([
-            usernamePassword(credentialsId: '15fab667-1a8d-48c1-8f18-08761a6ef87d', passwordVariable: 'AWS_SECRET', usernameVariable: 'AWS_KEY')
+            usernamePassword(
+              credentialsId: '15fab667-1a8d-48c1-8f18-08761a6ef87d',
+              passwordVariable: 'TF_VAR_aws_access_key',
+              usernameVariable: 'TF_VAR_aws_secret_key')
           ]) {
-          sh 'packer build -var aws_access_key=${AWS_KEY} -var aws_secret_key=${AWS_SECRET} /mnt/packer/baseAMI.json'
-        }
+            sh 'cd terraform'
+            sh 'terraform init'
+            sh 'terraform apply'
+          }
       }
     }
   }
