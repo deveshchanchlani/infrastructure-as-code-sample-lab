@@ -56,13 +56,9 @@ pipeline {
               passwordVariable: 'AWS_SECRET',
               usernameVariable: 'AWS_KEY')
           ]) {
-            sh "export TF_VAR_aws_access_key=${AWS_KEY}"
-            sh "export TF_VAR_aws_secret_key=${AWS_SECRET}"
-            sh "echo $TF_VAR_aws_access_key"
-            sh "echo $TF_VAR_aws_secret_key"
             sh 'cd terraform'
             sh 'terraform init'
-            sh 'terraform apply'
+            sh "terraform apply -auto-approve -var aws_access_key=${AWS_KEY} -var aws_secret_key=${AWS_SECRET}"
           }
       }
     }
