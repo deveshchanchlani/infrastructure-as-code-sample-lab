@@ -29,18 +29,18 @@ pipeline {
     //   }
     // }
 
-    stage('Terraform Init') {
-      agent {
-        docker {
-          image 'hashicorp/terraform:light'
-          args "--entrypoint=\'\'"
-        }
-      }
-      steps {
-        sh 'cd terraform'
-        sh 'terraform init'
-      }
-    }
+    // stage('Terraform Init') {
+    //   agent {
+    //     docker {
+    //       image 'hashicorp/terraform:light'
+    //       args "--entrypoint=\'\'"
+    //     }
+    //   }
+    //   steps {
+    //     sh 'cd terraform'
+    //     sh 'terraform init'
+    //   }
+    // }
 
     stage('Terraform Apply') {
       agent {
@@ -57,6 +57,7 @@ pipeline {
               usernameVariable: 'TF_VAR_aws_secret_key')
           ]) {
             sh 'cd terraform'
+            sh 'terraform init'
             sh 'terraform apply'
           }
       }
